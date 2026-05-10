@@ -83,7 +83,7 @@ async function onFileSelected(e: Event) {
 </script>
 
 <template>
-  <div class="flex flex-col h-full">
+  <div class="flex flex-col min-h-0 h-full">
     <!-- Header -->
     <header class="bg-gray-50/90 dark:bg-gray-950/90 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800">
       <div class="flex items-center justify-between px-4 h-14">
@@ -127,7 +127,7 @@ async function onFileSelected(e: Event) {
     </header>
 
     <!-- Content area -->
-    <div class="flex-1 overflow-y-auto px-4 pb-6">
+    <div class="flex-1 overflow-y-auto px-4 pb-38">
       <!-- Loading state -->
       <div
         v-if="loading"

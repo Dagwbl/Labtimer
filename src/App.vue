@@ -33,7 +33,7 @@ onMounted(async () => {
       />
     </div>
 
-    <main class="flex-1 overflow-hidden">
+    <main class="flex-1 overflow-visible">
       <RouterView />
     </main>
     <!-- Bottom Navigation -->

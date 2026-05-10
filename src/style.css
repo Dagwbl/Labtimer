@@ -21,5 +21,5 @@ body {
 
 /* Ensure touch targets are at least 44px */
 button, a, input, select, textarea {
-  @apply min-h-[44px];
+  @apply min-h-[36px];
 }

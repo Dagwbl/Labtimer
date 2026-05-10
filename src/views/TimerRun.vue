@@ -488,7 +488,7 @@ function saveInterruptedRecord() {
                 class="absolute inset-y-0 left-0 transition-all duration-200 ease-linear pointer-events-none"
                 :style="{
                   width: Math.min(progressPercent(), 100) + '%',
-                  background: 'linear-gradient(to right, rgba(234,165,180,0.22), rgba(234,165,148,0.35))',
+                  background: 'radial-gradient( circle farthest-corner at -0.1% 100.8%,  rgba(0,234,255,1) 0.2%, rgba(0,124,255,1) 59.1%, rgba(198,0,255,1) 100.2% )',
                 }"
               />
               <div class="relative z-10 px-4 py-3">

@@ -1,0 +1,50 @@
+{
+  "formatVersion": 1,
+  "exportedAt": "2026-05-09T00:00:00.000Z",
+  "recipe": {
+    "name": "Determination of Flow",
+    "description": "ASTM C230/C230M flow table test — determine the flow of hydraulic cement mortar.",
+    "steps": [
+      {
+        "label": "Clean and place flow mold",
+        "durationSec": 30,
+        "notes": "Carefully wipe the flow table clean and dry, and place the flow mold at the center."
+      },
+      {
+        "label": "Fill first layer and tamp",
+        "durationSec": 60,
+        "notes": "Place a layer of mortar about 25 mm in thickness in the mold and tamp 20 times with the tamper. The tamping pressure shall be just sufficient to ensure uniform filling of the mold. Tamping should be uniformly distributed over the cross section of each layer. For the bottom layer this will necessitate inclining the tamper slightly when tamping near the perimeter."
+      },
+      {
+        "label": "Fill second layer and tamp",
+        "durationSec": 60,
+        "notes": "Fill the mold with mortar and tamp as specified for the first layer."
+      },
+      {
+        "label": "Strike off mortar",
+        "durationSec": 30,
+        "notes": "Cut off the mortar to a plane surface flush with the top of the mold by drawing the straightedge or the edge of the trowel with a sawing motion across the top of the mold."
+      },
+      {
+        "label": "Wipe table top",
+        "durationSec": 30,
+        "notes": "Wipe the table top clean and dry, being especially careful to remove any water from around the edge of the flow mold."
+      },
+      {
+        "label": "Wait before lifting mold",
+        "durationSec": 60,
+        "notes": "Lift the mold away from the mortar 1 min after completing the mixing operation."
+      },
+      {
+        "label": "Drop table 25 times",
+        "durationSec": 15,
+        "notes": "Immediately drop the table 25 times in 15 s, unless otherwise specified."
+      },
+      {
+        "label": "Measure flow diameter",
+        "durationSec": 60,
+        "notes": "If using the caliper specified in Specification C230/C230M, measure the diameter of the mortar along the four lines scribed in the table top, recording each diameter as the number of caliper divisions, estimated to one tenth of a division. If some other caliper is being used, measure the diameter of the mortar along the four lines scribed in the table top, recording each diameter to the nearest millimetre."
+      }
+    ]
+  }
+}

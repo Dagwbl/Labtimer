@@ -1,0 +1,35 @@
+{
+  "formatVersion": 1,
+  "exportedAt": "2026-05-09T00:00:00.000Z",
+  "recipe": {
+    "name": "Procedure for Mixing Mortars",
+    "description": "Standard mortar mixing procedure per ASTM C305 — mix cement, water, and sand with timed steps at controlled speeds.",
+    "steps": [
+      {
+        "label": "Mix at slow speed",
+        "durationSec": 30,
+        "notes": "Place all the mixing water in the bowl. Add the cement to the water; then start the mixer and mix at the slow speed (140 ± 5 r/min) for 30 s."
+      },
+      {
+        "label": "Add sand while mixing",
+        "durationSec": 30,
+        "notes": "Add the entire quantity of sand slowly over a 30-s period, while mixing at slow speed."
+      },
+      {
+        "label": "Mix at medium speed",
+        "durationSec": 30,
+        "notes": "Stop the mixer, change to medium speed (285 ± 10 r/min), and mix for 30 s."
+      },
+      {
+        "label": "Let mortar stand",
+        "durationSec": 90,
+        "notes": "Stop the mixer and let the mortar stand for 90 s. During the first 15 s of this interval, quickly scrape down into the batch any mortar that may have collected on the side of the bowl; then for the remainder of this interval, close the mixer enclosure or cover the bowl with the lid."
+      },
+      {
+        "label": "Finish mixing at medium speed",
+        "durationSec": 60,
+        "notes": "Finish by mixing for 60 s at medium speed (285 ± 10 r/min)."
+      }
+    ]
+  }
+}

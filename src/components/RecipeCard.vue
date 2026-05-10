@@ -225,7 +225,7 @@ onUnmounted(() => document.removeEventListener('click', onDocumentClick))
           <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 1118 0z" />
           </svg>
-          {{ formatDuration(totalDurationMs.value) }}
+          {{ formatDuration(totalDurationMs) }}
         </span>
         <!-- Updated at -->
         <span class="inline-flex items-center gap-1">

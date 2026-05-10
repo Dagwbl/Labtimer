@@ -85,7 +85,7 @@ async function onFileSelected(e: Event) {
 <template>
   <div class="flex flex-col min-h-0 h-full">
     <!-- Header -->
-    <header class="bg-gray-50/90 dark:bg-gray-950/90 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800">
+    <header class="sticky top-0 z-30 bg-gray-50/90 dark:bg-gray-950/90 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800">
       <div class="flex items-center justify-between px-4 h-14">
         <h1 class="text-xl font-bold text-gray-900 dark:text-gray-100">
           My Recipes

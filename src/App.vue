@@ -21,7 +21,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="flex flex-col min-h-screen">
+  <div class="flex flex-col h-[100dvh]">
     <!-- Global toast container -->
     <div class="fixed top-4 right-14 z-[9999] flex flex-col gap-2 pointer-events-none">
       <Toast
@@ -33,7 +33,7 @@ onMounted(async () => {
       />
     </div>
 
-    <main class="flex-1 overflow-visible">
+    <main class="flex-1 overflow-y-auto">
       <RouterView />
     </main>
     <!-- Bottom Navigation -->

@@ -110,7 +110,12 @@ onUnmounted(() => document.removeEventListener('click', onDocumentClick))
 </script>
 
 <template>
-  <div class="relative bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 transition-all hover:shadow-md">
+  <div
+    :class="[
+      'relative bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 transition-all hover:shadow-md',
+      showMenu ? 'z-40' : '',
+    ]"
+  >
     <!-- Card body — tap to run -->
     <div
       role="button"
@@ -127,7 +132,7 @@ onUnmounted(() => document.removeEventListener('click', onDocumentClick))
         <div ref="menuContainerRef" class="relative" @click.stop>
           <button
             @click.stop="toggleMenu"
-            class="flex items-center justify-center w-6 h-6 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            class="flex items-center justify-center w-10 h-6 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             aria-label="Recipe actions"
             :aria-expanded="showMenu"
           >
@@ -144,9 +149,10 @@ onUnmounted(() => document.removeEventListener('click', onDocumentClick))
               v-if="showMenu"
               class="absolute right-0 top-full mt-1 z-50 min-w-[168px] bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 py-1.5 overflow-hidden"
               @click.stop
+              @pointerdown.stop
             >
               <button
-                @click="navigateToEdit"
+                @click.stop="navigateToEdit"
                 :disabled="disabled"
                 class="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
                 :class="disabled ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'"
@@ -157,7 +163,7 @@ onUnmounted(() => document.removeEventListener('click', onDocumentClick))
                 Edit
               </button>
               <button
-                @click="navigateToRun"
+                @click.stop="navigateToRun"
                 :disabled="disabled"
                 class="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
                 :class="disabled ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'"
@@ -168,7 +174,7 @@ onUnmounted(() => document.removeEventListener('click', onDocumentClick))
                 Run
               </button>
               <button
-                @click="doExport('json')"
+                @click.stop="doExport('json')"
                 :disabled="disabled"
                 class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
@@ -178,7 +184,7 @@ onUnmounted(() => document.removeEventListener('click', onDocumentClick))
                 Export as JSON
               </button>
               <button
-                @click="doExport('yaml')"
+                @click.stop="doExport('yaml')"
                 :disabled="disabled"
                 class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
@@ -189,7 +195,7 @@ onUnmounted(() => document.removeEventListener('click', onDocumentClick))
               </button>
               <div class="border-t border-gray-200 dark:border-gray-700 my-1"></div>
               <button
-                @click="handleDelete"
+                @click.stop="handleDelete"
                 :disabled="disabled"
                 class="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
                 :class="disabled ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed' : 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'"

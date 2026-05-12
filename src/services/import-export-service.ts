@@ -11,8 +11,8 @@ function truncate(str: string, max: number): string {
 }
 
 export const importExportService = {
-  /** Import recipe from a File object (JSON or YAML) */
-  async importRecipe(file: File): Promise<{ name: string }> {
+  /** Import recipe(s) from a File object (JSON or YAML) */
+  async importRecipe(file: File): Promise<{ names: string[] }> {
     if (file.size > MAX_FILE_SIZE) {
       throw new Error('File too large (max 1MB)')
     }
@@ -28,35 +28,57 @@ export const importExportService = {
       throw new Error('Unsupported file format. Use .yaml, .yml, or .json')
     }
 
-    const result = RecipeExportSchema.safeParse(parsed)
-    if (!result.success) {
-      const errors = result.error.issues
-        .map(i => `${i.path.join('.')}: ${i.message}`)
-        .join('; ')
-      throw new Error(`Invalid file: ${errors}`)
+    if (parsed === undefined || parsed === null) {
+      throw new Error('Invalid file: no recipes found')
     }
 
-    const data = result.data
+    const payloads = Array.isArray(parsed) ? parsed : [parsed]
+    if (payloads.length === 0) {
+      throw new Error('Invalid file: no recipes found')
+    }
 
-    // Truncate long names to prevent UI overflow
-    const recipeName = truncate(data.recipe.name, MAX_NAME_LENGTH)
-
-    const recipe = await recipeService.createRecipe({
-      name: recipeName,
-      description: data.recipe.description,
+    const errors: string[] = []
+    const valid: RecipeExport[] = []
+    payloads.forEach((payload, index) => {
+      const result = RecipeExportSchema.safeParse(payload)
+      if (!result.success) {
+        const issues = result.error.issues
+          .map(i => `${i.path.join('.')}: ${i.message}`)
+          .join('; ')
+        errors.push(`Item ${index + 1}: ${issues}`)
+        return
+      }
+      valid.push(result.data)
     })
 
-    await recipeService.saveSteps(
-      recipe.id,
-      data.recipe.steps.map(s => ({
-        label: truncate(s.label, MAX_NAME_LENGTH),
-        durationMs: s.durationSec * 1000,
-        notes: s.notes,
-        order: 0, // placeholder — saveSteps overwrites order by index
-      })),
-    )
+    if (errors.length > 0) {
+      throw new Error(`Invalid file: ${errors.join(' | ')}`)
+    }
 
-    return { name: recipe.name }
+    const names: string[] = []
+    for (const data of valid) {
+      // Truncate long names to prevent UI overflow
+      const recipeName = truncate(data.recipe.name, MAX_NAME_LENGTH)
+
+      const recipe = await recipeService.createRecipe({
+        name: recipeName,
+        description: data.recipe.description,
+      })
+
+      await recipeService.saveSteps(
+        recipe.id,
+        data.recipe.steps.map(s => ({
+          label: truncate(s.label, MAX_NAME_LENGTH),
+          durationMs: s.durationSec * 1000,
+          notes: s.notes,
+          order: 0, // placeholder — saveSteps overwrites order by index
+        })),
+      )
+
+      names.push(recipe.name)
+    }
+
+    return { names }
   },
 
   /** Export recipe as a JSON Blob */

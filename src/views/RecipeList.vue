@@ -70,8 +70,12 @@ async function onFileSelected(e: Event) {
   if (!file) return
 
   try {
-    const { name } = await importExportService.importRecipe(file)
-    showToast(`Imported "${name}"`, 'success')
+    const { names } = await importExportService.importRecipe(file)
+    if (names.length === 1) {
+      showToast(`Imported "${names[0]}"`, 'success')
+    } else {
+      showToast(`Imported ${names.length} recipes`, 'success')
+    }
     await loadRecipes()
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Import failed'

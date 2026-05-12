@@ -112,12 +112,6 @@ function removeStep(index: number) {
   steps.value.splice(index, 1)
 }
 
-function setStepDuration(index: number, ms: number) {
-  const step = steps.value[index]
-  step.durationMs = ms
-  setDurationInputs(step, ms)
-}
-
 function onDurationPartInput(index: number, field: DurationField, e: Event) {
   const target = e.target as HTMLInputElement
   const raw = target.value.replace(/[^\d]/g, '')

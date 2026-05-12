@@ -49,9 +49,14 @@ onMounted(async () => {
           order: s.order,
         }
       })
+      if (steps.value.length === 0) {
+        addStep()
+      }
     } catch {
       loadError.value = 'Recipe not found'
     }
+  } else {
+    addStep()
   }
 })
 

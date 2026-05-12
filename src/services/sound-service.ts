@@ -44,10 +44,10 @@ class SoundService {
     osc.frequency.value = 800;
     osc.type = 'sine';
     gain.gain.setValueAtTime(0.9, this.audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.3);
+    gain.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.5);
     osc.connect(gain).connect(this.audioCtx.destination);
     osc.start();
-    osc.stop(this.audioCtx.currentTime + 0.3);
+    osc.stop(this.audioCtx.currentTime + 0.5);
   }
 
   /**

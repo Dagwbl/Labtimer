@@ -13,9 +13,17 @@ const { isDark, toggleDark } = useDarkMode()
 const route = useRoute()
 const isEditing = computed(() => route.params.id !== undefined)
 
+interface EditableStep extends Omit<Step, 'id' | 'recipeId'> {
+  durationHoursInput: string
+  durationMinutesInput: string
+  durationSecondsInput: string
+}
+
+type DurationField = 'durationHoursInput' | 'durationMinutesInput' | 'durationSecondsInput'
+
 const recipeName = ref('')
 const recipeDescription = ref('')
-const steps = ref<Omit<Step, 'id' | 'recipeId'>[]>([])
+const steps = ref<EditableStep[]>([])
 const saving = ref(false)
 const loadError = ref('')
 const validationError = ref('')
@@ -29,12 +37,18 @@ onMounted(async () => {
       const { recipe, steps: loadedSteps } = await recipeService.getRecipe(id)
       recipeName.value = recipe.name
       recipeDescription.value = recipe.description
-      steps.value = loadedSteps.map(s => ({
-        label: s.label,
-        durationMs: s.durationMs,
-        notes: s.notes,
-        order: s.order,
-      }))
+      steps.value = loadedSteps.map(s => {
+        const parts = getDurationParts(s.durationMs)
+        return {
+          label: s.label,
+          durationMs: s.durationMs,
+          durationHoursInput: parts.hours,
+          durationMinutesInput: parts.minutes,
+          durationSecondsInput: parts.seconds,
+          notes: s.notes,
+          order: s.order,
+        }
+      })
     } catch {
       loadError.value = 'Recipe not found'
     }
@@ -43,37 +57,55 @@ onMounted(async () => {
 
 /* ── Duration helpers ─────────────────────────────────────── */
 
-function formatDuration(ms: number): string {
+function getDurationParts(ms: number): { hours: string; minutes: string; seconds: string } {
   const totalSec = Math.floor(Math.max(0, ms) / 1000)
   const hrs = Math.floor(totalSec / 3600)
   const min = Math.floor((totalSec % 3600) / 60)
   const sec = totalSec % 60
-  if (hrs > 0) {
-    return `${String(hrs).padStart(2, '0')}:${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
+  return {
+    hours: String(hrs).padStart(2, '0'),
+    minutes: String(min).padStart(2, '0'),
+    seconds: String(sec).padStart(2, '0'),
   }
-  return `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
 }
 
-function parseDuration(text: string): number {
-  const parts = text.split(':')
-  if (parts.length === 3) {
-    const hrs = parseInt(parts[0], 10) || 0
-    const min = parseInt(parts[1], 10) || 0
-    const sec = parseInt(parts[2], 10) || 0
-    return Math.max(0, (hrs * 3600 + min * 60 + sec) * 1000)
-  }
-  if (parts.length === 2) {
-    const minutes = parseInt(parts[0], 10) || 0
-    const seconds = parseInt(parts[1], 10) || 0
-    return Math.max(0, (minutes * 60 + seconds) * 1000)
-  }
-  return 0
+function setDurationInputs(step: EditableStep, ms: number) {
+  const parts = getDurationParts(ms)
+  step.durationHoursInput = parts.hours
+  step.durationMinutesInput = parts.minutes
+  step.durationSecondsInput = parts.seconds
+}
+
+function parseDurationInputs(step: EditableStep): number | null {
+  const rawHours = step.durationHoursInput.trim()
+  const rawMinutes = step.durationMinutesInput.trim()
+  const rawSeconds = step.durationSecondsInput.trim()
+  if (!rawHours && !rawMinutes && !rawSeconds) return null
+  if ([rawHours, rawMinutes, rawSeconds].some(raw => raw && !/^\d+$/.test(raw))) return null
+
+  const hours = rawHours ? Number(rawHours) : 0
+  const minutes = rawMinutes ? Number(rawMinutes) : 0
+  const seconds = rawSeconds ? Number(rawSeconds) : 0
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes) || !Number.isFinite(seconds)) return null
+
+  return Math.max(0, (hours * 3600 + minutes * 60 + seconds) * 1000)
 }
 
 /* ── Step actions ─────────────────────────────────────────── */
 
 function addStep() {
-  steps.value.push({ label: '', durationMs: 30000, notes: '', order: steps.value.length })
+  const defaultMs = 30000
+  const newStep: EditableStep = {
+    label: '',
+    durationMs: defaultMs,
+    durationHoursInput: '00',
+    durationMinutesInput: '00',
+    durationSecondsInput: '00',
+    notes: '',
+    order: steps.value.length,
+  }
+  setDurationInputs(newStep, defaultMs)
+  steps.value.push(newStep)
 }
 
 function removeStep(index: number) {
@@ -81,15 +113,62 @@ function removeStep(index: number) {
 }
 
 function setStepDuration(index: number, ms: number) {
-  steps.value[index].durationMs = ms
+  const step = steps.value[index]
+  step.durationMs = ms
+  setDurationInputs(step, ms)
 }
 
-function onDurationInput(index: number, e: Event) {
+function onDurationPartInput(index: number, field: DurationField, e: Event) {
   const target = e.target as HTMLInputElement
-  const parsed = parseDuration(target.value)
-  if (!isNaN(parsed)) {
-    steps.value[index].durationMs = parsed
+  const raw = target.value.replace(/[^\d]/g, '')
+  if (field === 'durationMinutesInput' || field === 'durationSecondsInput') {
+    const limited = raw.slice(0, 2)
+    if (!limited) {
+      steps.value[index][field] = ''
+      return
+    }
+    const value = Number(limited)
+    steps.value[index][field] = value > 59 ? '59' : limited
+    return
   }
+  steps.value[index][field] = raw
+}
+
+function commitDurationInputs(index: number) {
+  const step = steps.value[index]
+  const parsed = parseDurationInputs(step)
+  if (parsed === null) {
+    setDurationInputs(step, step.durationMs)
+    return
+  }
+  step.durationMs = parsed
+  setDurationInputs(step, parsed)
+}
+
+function onDurationPartBlur(index: number) {
+  commitDurationInputs(index)
+}
+
+function onDurationKeydown(index: number, e: KeyboardEvent) {
+  if (e.key === 'Enter') {
+    e.preventDefault()
+    commitDurationInputs(index)
+    ;(e.target as HTMLInputElement).blur()
+  }
+  if (e.key === 'Escape') {
+    e.preventDefault()
+    setDurationInputs(steps.value[index], steps.value[index].durationMs)
+    ;(e.target as HTMLInputElement).blur()
+  }
+}
+
+function onDurationFocus(e: FocusEvent) {
+  const target = e.target as HTMLInputElement
+  target.select()
+}
+
+function syncAllDurationInputs() {
+  steps.value.forEach((_step, index) => commitDurationInputs(index))
 }
 
 function onLabelInput(index: number, e: Event) {
@@ -105,6 +184,13 @@ function onNotesInput(index: number, e: Event) {
 /* ── Save / Cancel / Delete ───────────────────────────────── */
 
 async function save() {
+  syncAllDurationInputs()
+  const stepPayload = steps.value.map((step, index) => ({
+    label: step.label,
+    durationMs: step.durationMs,
+    notes: step.notes,
+    order: index,
+  }))
   // Validate: recipe name is required
   if (!recipeName.value.trim()) {
     validationError.value = 'Recipe name is required'
@@ -134,13 +220,13 @@ async function save() {
         name: recipeName.value,
         description: recipeDescription.value,
       })
-      await recipeService.saveSteps(id, steps.value)
+      await recipeService.saveSteps(id, stepPayload)
     } else {
       const recipe = await recipeService.createRecipe({
         name: recipeName.value,
         description: recipeDescription.value,
       })
-      await recipeService.saveSteps(recipe.id, steps.value)
+      await recipeService.saveSteps(recipe.id, stepPayload)
     }
     router.push('/')
   } finally {
@@ -412,45 +498,54 @@ void doExport
 
             <!-- Duration -->
             <div>
-              <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Duration</label>
+              <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                Duration <span class="text-gray-400 dark:text-gray-500 font-normal">(HH:MM:SS)</span>
+              </label>
               <div class="flex items-center gap-2">
-                <div class="relative">
+                <div class="flex items-center gap-1">
                   <input
-                    :value="formatDuration(step.durationMs)"
-                    @input="onDurationInput(index, $event)"
+                    :value="step.durationHoursInput"
+                    @input="onDurationPartInput(index, 'durationHoursInput', $event)"
+                    @blur="onDurationPartBlur(index)"
+                    @keydown="onDurationKeydown(index, $event)"
+                    @focus="onDurationFocus"
                     type="text"
-                    class="w-24 px-3 py-2 text-sm font-mono bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-gray-100 outline-none focus:border-blue-400 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
+                    placeholder="HH"
+                    aria-label="Hours"
+                    class="w-14 px-2 py-2 text-sm text-center font-mono bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-gray-100 outline-none focus:border-blue-400 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                   />
-                  <span class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">MM:SS</span>
-                </div>
-                <div class="flex gap-1">
-                  <button
-                    @click="setStepDuration(index, 15000)"
-                    :class="['px-2 py-1.5 text-xs font-medium rounded-lg border transition-colors',
-                      step.durationMs === 15000
-                        ? 'bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300'
-                        : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700']"
-                  >
-                    15s
-                  </button>
-                  <button
-                    @click="setStepDuration(index, 30000)"
-                    :class="['px-2 py-1.5 text-xs font-medium rounded-lg border transition-colors',
-                      step.durationMs === 30000
-                        ? 'bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300'
-                        : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700']"
-                  >
-                    30s
-                  </button>
-                  <button
-                    @click="setStepDuration(index, 60000)"
-                    :class="['px-2 py-1.5 text-xs font-medium rounded-lg border transition-colors',
-                      step.durationMs === 60000
-                        ? 'bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300'
-                        : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700']"
-                  >
-                    1:00
-                  </button>
+                  <span class="text-xs text-gray-400">:</span>
+                  <input
+                    :value="step.durationMinutesInput"
+                    @input="onDurationPartInput(index, 'durationMinutesInput', $event)"
+                    @blur="onDurationPartBlur(index)"
+                    @keydown="onDurationKeydown(index, $event)"
+                    @focus="onDurationFocus"
+                    type="text"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
+                    maxlength="2"
+                    placeholder="MM"
+                    aria-label="Minutes"
+                    class="w-12 px-2 py-2 text-sm text-center font-mono bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-gray-100 outline-none focus:border-blue-400 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                  />
+                  <span class="text-xs text-gray-400">:</span>
+                  <input
+                    :value="step.durationSecondsInput"
+                    @input="onDurationPartInput(index, 'durationSecondsInput', $event)"
+                    @blur="onDurationPartBlur(index)"
+                    @keydown="onDurationKeydown(index, $event)"
+                    @focus="onDurationFocus"
+                    type="text"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
+                    maxlength="2"
+                    placeholder="SS"
+                    aria-label="Seconds"
+                    class="w-12 px-2 py-2 text-sm text-center font-mono bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-gray-100 outline-none focus:border-blue-400 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                  />
                 </div>
               </div>
             </div>

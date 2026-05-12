@@ -14,6 +14,54 @@ const route = useRoute()
 const { notifyStepComplete } = useSound()
 const { isDark, toggleDark } = useDarkMode()
 
+type WakeLockSentinelLike = {
+  released: boolean
+  release: () => Promise<void>
+  addEventListener: (type: 'release', listener: () => void) => void
+}
+
+const wakeLockApi = 'wakeLock' in navigator
+  ? (navigator as Navigator & {
+    wakeLock: { request: (type: 'screen') => Promise<WakeLockSentinelLike> }
+  }).wakeLock
+  : null
+
+let wakeLock: WakeLockSentinelLike | null = null
+
+async function requestWakeLock() {
+  if (!wakeLockApi) return
+  if (wakeLock && !wakeLock.released) return
+  try {
+    wakeLock = await wakeLockApi.request('screen')
+    wakeLock.addEventListener('release', () => {
+      wakeLock = null
+    })
+  } catch {
+    wakeLock = null
+  }
+}
+
+async function releaseWakeLock() {
+  if (!wakeLock) return
+  try {
+    await wakeLock.release()
+  } catch {
+    // ignore
+  } finally {
+    wakeLock = null
+  }
+}
+
+function handleVisibilityChange() {
+  if (document.visibilityState === 'visible') {
+    if (phase.value === 'running' || phase.value === 'paused') {
+      void requestWakeLock()
+    }
+  } else {
+    void releaseWakeLock()
+  }
+}
+
 // ── Recipe state ────────────────────────────────────────────────────────────
 
 const recipeName = ref('')
@@ -57,6 +105,12 @@ onMounted(async () => {
   loading.value = false
 })
 
+onMounted(() => {
+  if (wakeLockApi) {
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+  }
+})
+
 // Warn when navigating away during an active timer
 onBeforeRouteLeave((_to, _from, next) => {
   if (phase.value === 'running' || phase.value === 'paused') {
@@ -75,6 +129,8 @@ onBeforeRouteLeave((_to, _from, next) => {
 // Clean up active timer flag when leaving the page
 onUnmounted(() => {
   setTimerActive(false)
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+  void releaseWakeLock()
 })
 
 // ── Detect step completion via stepTimings growth ──────────────────────────
@@ -108,6 +164,14 @@ watch(phase, (newPhase, oldPhase) => {
         saveCompletedRecord()
       }, 0)
     }
+  }
+})
+
+watch(phase, (newPhase) => {
+  if (newPhase === 'running' || newPhase === 'paused') {
+    void requestWakeLock()
+  } else {
+    void releaseWakeLock()
   }
 })
 

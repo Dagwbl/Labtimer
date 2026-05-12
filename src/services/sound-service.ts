@@ -9,22 +9,41 @@
  * created or resumed — this is a browser autoplay policy restriction.
  */
 
+type AudioContextConstructor = new () => AudioContext;
+
+const AudioContextCtor = typeof window !== 'undefined'
+  ? window.AudioContext
+    || (window as Window & { webkitAudioContext?: AudioContextConstructor }).webkitAudioContext
+  : null;
+
 class SoundService {
   private audioCtx: AudioContext | null = null;
+
+  async ensureAudioReady(): Promise<void> {
+    if (!AudioContextCtor) return;
+    try {
+      if (!this.audioCtx || this.audioCtx.state === 'closed') {
+        this.audioCtx = new AudioContextCtor();
+      }
+      if (this.audioCtx.state === 'suspended') {
+        await this.audioCtx.resume();
+      }
+    } catch {
+      // ignore
+    }
+  }
 
   /**
    * Play a short "step complete" chime using the Web Audio API.
    * Creates the AudioContext lazily on first call.
    */
   async playStepComplete(): Promise<void> {
-    if (!this.audioCtx) {
-      this.audioCtx = new AudioContext();
-    }
+    if (!this.audioCtx || this.audioCtx.state !== 'running') return;
     const osc = this.audioCtx.createOscillator();
     const gain = this.audioCtx.createGain();
     osc.frequency.value = 800;
     osc.type = 'sine';
-    gain.gain.setValueAtTime(0.3, this.audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.6, this.audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.3);
     osc.connect(gain).connect(this.audioCtx.destination);
     osc.start();
@@ -37,7 +56,7 @@ class SoundService {
    */
   async vibrate(): Promise<void> {
     if (navigator.vibrate) {
-      navigator.vibrate(200);
+      navigator.vibrate(300);
     }
   }
 
@@ -46,6 +65,7 @@ class SoundService {
    * Uses Promise.allSettled so a failure in one does not throw.
    */
   async notify(): Promise<void> {
+    await this.ensureAudioReady();
     await Promise.allSettled([this.playStepComplete(), this.vibrate()]);
   }
 }

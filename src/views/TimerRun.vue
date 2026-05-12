@@ -11,7 +11,7 @@ import { useDarkMode } from '@/composables/useDarkMode'
 
 const router = useRouter()
 const route = useRoute()
-const { notifyStepComplete } = useSound()
+const { notifyStepComplete, prepareAudio } = useSound()
 const { isDark, toggleDark } = useDarkMode()
 
 type WakeLockSentinelLike = {
@@ -222,11 +222,13 @@ function progressPercent(): number {
 // ── Timer control handlers ─────────────────────────────────────────────────
 
 function handleStart() {
+  void prepareAudio()
   timer.value?.start()
   setTimerActive(true)
 }
 
 function handleStartFrom(index: number) {
+  void prepareAudio()
   timer.value?.startFrom(index)
   setTimerActive(true)
 }
@@ -236,6 +238,7 @@ function handlePause() {
 }
 
 function handleResume() {
+  void prepareAudio()
   timer.value?.resume()
 }
 
@@ -260,6 +263,7 @@ function handleSkipTo(index: number) {
 }
 
 function handleReRun() {
+  void prepareAudio()
   savedCompletion = false
   // Reset and restart without page reload
   timer.value?.start()
